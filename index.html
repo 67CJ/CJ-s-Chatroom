@@ -70,12 +70,12 @@
         <!-- Sign Up / Log In Links -->
         <div class="w-full flex justify-between space-x-4 mb-12">
             <!-- Sign Up Button/Link -->
-            <a id="signup-btn" class="bordered-link w-1/2" href="#">
+            <a id="signup-btn" class="bordered-link w-1/2" href="signup.html">
                 Sign up
             </a>
             
             <!-- Log In Button/Link -->
-            <a id="login-btn" class="bordered-link w-1/2" href="#">
+            <a id="login-btn" class="bordered-link w-1/2" href="login.html">
                 Log in
             </a>
         </div>
@@ -88,10 +88,10 @@
             <p class="text-lg">Download our app.</p>
         </div>
         
-        <!-- Download Button -->
+        <!-- Discord Server Button (Replaced Download) -->
         <div class="w-full mt-6 mb-12 flex justify-center">
-            <a id="download-btn" class="bordered-link max-w-xs w-full" href="#">
-                Download
+            <a id="discord-server-btn" class="bordered-link max-w-xs w-full" href="https://discord.gg/rYHGbsuAam" target="_blank">
+                Discord Server
             </a>
         </div>
         
@@ -133,20 +133,8 @@
             }, 3000);
         }
 
-        document.getElementById('signup-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            showStatus('Redirecting to Sign Up page...');
-        });
-
-        document.getElementById('login-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            showStatus('Redirecting to Log In page...');
-        });
-
-        document.getElementById('download-btn').addEventListener('click', (e) => {
-            e.preventDefault();
-            showStatus('Starting app download...');
-        });
+        // The Sign Up and Log In buttons now use standard href navigation, 
+        // so we remove the e.preventDefault() and showStatus logic for them.
 
         document.getElementById('roadmap-link').addEventListener('click', (e) => {
             e.preventDefault();
@@ -161,6 +149,12 @@
         document.getElementById('support-link').addEventListener('click', (e) => {
             e.preventDefault();
             showStatus('Contacting Support...');
+        });
+
+        // Add a click listener for the new Discord Server button to show status.
+        document.getElementById('discord-server-btn').addEventListener('click', (e) => {
+             // Let the default navigation happen, but show a message first
+             showStatus('Redirecting to Discord...');
         });
     </script>
 </body>
