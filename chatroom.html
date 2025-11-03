@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CJ's Chatroom - Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Heroicons for modern icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6; /* Light gray background */
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Responsive Main Container for two columns (Sidebar/List) on desktop */
+        #main-container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar/User List styles */
+        #sidebar {
+            width: 100%;
+            max-width: 100%;
+            background-color: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+            padding: 1rem 0;
+            overflow-y: auto;
+        }
+
+        /* Desktop view: sidebar becomes fixed width and main content appears */
+        @media (min-width: 768px) {
+            #sidebar {
+                max-width: 320px;
+                border-right: 1px solid #e5e7eb;
+            }
+            #content-placeholder {
+                display: flex;
+            }
+        }
+        
+        .user-item, .room-item {
+            cursor: pointer;
+            transition: background-color 0.15s;
+        }
+
+        .user-item:hover, .room-item:hover {
+            background-color: #f9fafb;
+        }
+        
+        /* Profile Picture Placeholder */
+        .pfp-placeholder {
+            /* Fallback image provided by the user */
+            background-image: url('https://tse2.mm.bing.net/th/id/OIP.hWCgoIQsOnv4fHroWUVl7AHaHa?rs=1&pid=ImgDetMain&o=7&rm=3');
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .pfp-placeholder img {
+             /* Hide the image element if the background image is used as a fallback */
+             display: none;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    
+    <!-- Top Bar / Header -->
+    <header class="bg-white shadow-md p-4 flex justify-between items-center z-10">
+        <h1 class="text-xl font-bold text-indigo-600">CJ's Chatroom</h1>
+        <button id="logout-btn" class="text-red-500 hover:text-red-700 transition duration-150 flex items-center space-x-1">
+            <i class="fas fa-sign-out-alt"></i>
+            <span class="text-sm font-medium hidden sm:inline">Log Out</span>
+        </button>
+    </header>
+
+    <!-- Main Content Area -->
+    <div id="main-container">
+        
+        <!-- Sidebar/Dashboard List -->
+        <div id="sidebar">
+            <div class="px-4 pb-4 border-b border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <div id="user-pfp-container" class="relative">
+                        <!-- Current User PFP -->
+                        <div id="current-user-pfp" class="w-12 h-12 rounded-full ring-2 ring-indigo-500 bg-gray-300 pfp-placeholder"></div>
+                        <!-- PFP Upload Button Overlay -->
+                        <button id="pfp-upload-btn" class="absolute bottom-0 right-0 bg-indigo-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-xs border border-white hover:bg-indigo-600 transition">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-lg" id="current-username">Loading...</p>
+                        <p class="text-xs text-gray-500 truncate" id="current-user-id">ID: </p>
+                    </div>
+                </div>
+                <input type="text" id="pfp-url-input" class="mt-3 w-full p-2 border border-gray-300 rounded-md text-sm hidden" placeholder="Enter new PFP URL (e.g., https://...)">
+                <button id="pfp-save-btn" class="mt-2 w-full bg-indigo-500 text-white p-2 rounded-md text-sm font-medium hover:bg-indigo-600 transition hidden">Save PFP</button>
+            </div>
+
+            <!-- Chatrooms List -->
+            <div class="p-4">
+                <h2 class="text-sm font-bold text-gray-500 uppercase mb-2">Chatrooms</h2>
+                <div id="chatrooms-list">
+                    <!-- Placeholder Chatroom (Public) -->
+                    <a href="#" class="room-item flex items-center p-3 rounded-lg space-x-3 mb-2 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200">
+                        <i class="fas fa-comments text-xl text-indigo-500"></i>
+                        <div class="flex-1">
+                            <p class="font-semibold"># General Chat</p>
+                            <p class="text-xs text-gray-500 truncate">Discuss anything here!</p>
+                        </div>
+                    </a>
+                    <!-- Chatrooms will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Users List -->
+            <div class="p-4 border-t border-gray-200 mt-4">
+                <h2 class="text-sm font-bold text-gray-500 uppercase mb-2">Users (Direct Message)</h2>
+                <div id="users-list">
+                    <p class="text-sm text-gray-500">Loading users...</p>
+                    <!-- Users will be loaded here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Placeholder (Hidden on mobile) -->
+        <div id="content-placeholder" class="hidden md:flex flex-col flex-1 justify-center items-center bg-gray-100 p-8">
+            <i class="fas fa-hand-point-left text-6xl text-gray-400 mb-4"></i>
+            <p class="text-lg text-gray-600 text-center">Select a Chatroom or User on the left to start chatting!</p>
+        </div>
+    </div>
+    
+    <!-- Status Box (used for errors/success messages) -->
+    <div id="status-box" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 z-50"></div>
+
+
+    <script type="module">
+        // Import Firebase components
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged,
+            signOut, 
+            signInWithCustomToken, 
+            signInAnonymously 
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            collection,
+            onSnapshot,
+            query,
+            setLogLevel
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Enable Firebase debug logging
+        setLogLevel('Debug');
+
+        // --- Constants ---
+        const DEFAULT_PFP_URL = 'https://tse2.mm.bing.net/th/id/OIP.hWCgoIQsOnv4fHroWUVl7AHaHa?rs=1&pid=ImgDetMain&o=7&rm=3';
+        const APP_ID = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const FIREBASE_CONFIG = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const INITIAL_AUTH_TOKEN = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // --- Global Firebase Instances and State ---
+        let app;
+        let auth;
+        let db;
+        let currentUserId = null;
+        let isAuthReady = false;
+
+        // --- DOM Elements ---
+        const currentUserPfp = document.getElementById('current-user-pfp');
+        const currentUsernameEl = document.getElementById('current-username');
+        const currentUserIdEl = document.getElementById('current-user-id');
+        const pfpUrlInput = document.getElementById('pfp-url-input');
+        const pfpSaveBtn = document.getElementById('pfp-save-btn');
+        const pfpUploadBtn = document.getElementById('pfp-upload-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const usersListEl = document.getElementById('users-list');
+        const statusBox = document.getElementById('status-box');
+
+
+        // --- Utility Functions ---
+
+        function showStatus(message, isError = false) {
+            statusBox.textContent = message;
+            // Reset classes
+            statusBox.className = 'fixed top-4 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-lg shadow-lg opacity-0 transition-opacity duration-300 z-50';
+            
+            if (isError) {
+                statusBox.classList.add('bg-red-600', 'text-white');
+            } else {
+                statusBox.classList.add('bg-indigo-600', 'text-white');
+            }
+            
+            statusBox.classList.remove('opacity-0');
+            statusBox.classList.add('opacity-100');
+
+            setTimeout(() => {
+                statusBox.classList.remove('opacity-100');
+                statusBox.classList.add('opacity-0');
+            }, 3000);
+        }
+
+        function createProfilePicture(url, sizeClass = 'w-12 h-12') {
+            const pfpDiv = document.createElement('div');
+            pfpDiv.className = `${sizeClass} rounded-full bg-gray-300 overflow-hidden flex items-center justify-center flex-shrink-0`;
+            
+            if (url && url !== DEFAULT_PFP_URL) {
+                 // If a custom URL is provided, set it as background image (preferred for PFP)
+                pfpDiv.style.backgroundImage = `url('${url}')`;
+                pfpDiv.style.backgroundSize = 'cover';
+                pfpDiv.style.backgroundPosition = 'center';
+            } else {
+                // Use default placeholder style
+                pfpDiv.classList.add('pfp-placeholder');
+            }
+
+            return pfpDiv;
+        }
+
+        // --- Firebase Initialization ---
+        try {
+            app = initializeApp(FIREBASE_CONFIG);
+            auth = getAuth(app);
+            db = getFirestore(app);
+            console.log("Firebase initialized successfully.");
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            showStatus('App initialization failed.', true);
+        }
+
+        // --- Authentication and Data Setup ---
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // User is signed in (either via email/password or anonymously)
+                currentUserId = user.uid;
+                isAuthReady = true;
+
+                // If user is Anonymous, redirect to login
+                if (user.isAnonymous && !INITIAL_AUTH_TOKEN) {
+                    console.log("Anonymous user detected without token. Redirecting to login.");
+                    // --- REDIRECT TO LOGIN.HTML ---
+                    window.location.href = 'login.html'; 
+                    return;
+                }
+
+                if (INITIAL_AUTH_TOKEN) {
+                    await signInWithCustomToken(auth, INITIAL_AUTH_TOKEN).catch(error => {
+                        console.error("Error signing in with custom token:", error);
+                        // Fallback to sign in anonymously if custom token fails
+                        signInAnonymously(auth).then(() => console.log("Signed in anonymously (fallback)."));
+                    });
+                } else if (user.isAnonymous) {
+                     // If signed in anonymously, make sure the user is redirected if they need to log in later
+                    console.log("User is currently anonymous. Data will be private.");
+                }
+
+                // Start listeners now that we have a user
+                listenForCurrentProfile(currentUserId);
+                listenForAllUsers();
+                
+                currentUserIdEl.textContent = `ID: ${currentUserId.substring(0, 8)}...`;
+
+            } else {
+                // User is signed out. Redirect to login page
+                console.log("User not authenticated. Redirecting to login.");
+                // --- REDIRECT TO LOGIN.HTML ---
+                window.location.href = 'login.html'; 
+            }
+        });
+
+        // --- Profile Management ---
+
+        // Listen for the current user's profile data (username and pfp)
+        function listenForCurrentProfile(userId) {
+            const userProfileRef = doc(db, `artifacts/${APP_ID}/users/${userId}/profile/data`);
+            
+            onSnapshot(userProfileRef, (docSnap) => {
+                if (docSnap.exists() && isAuthReady) {
+                    const profileData = docSnap.data();
+                    const username = profileData.username || 'Anonymous User';
+                    const pfpUrl = profileData.pfpUrl || DEFAULT_PFP_URL;
+
+                    currentUsernameEl.textContent = username;
+                    
+                    // Update PFP display
+                    currentUserPfp.style.backgroundImage = `url('${pfpUrl}')`;
+                    currentUserPfp.classList.remove('pfp-placeholder');
+                    if (pfpUrl === DEFAULT_PFP_URL) {
+                        currentUserPfp.classList.add('pfp-placeholder');
+                    }
+                    
+                } else if (!docSnap.exists() && isAuthReady) {
+                    console.warn("Current user profile document not found. Creating a default.");
+                    // Ensure a profile exists for new users (e.g., anonymous ones)
+                    setDoc(userProfileRef, { 
+                        username: 'Anonymous User',
+                        pfpUrl: DEFAULT_PFP_URL,
+                        createdAt: new Date().toISOString()
+                    }, { merge: true }).catch(err => console.error("Error creating default profile:", err));
+                }
+            }, (error) => {
+                console.error("Error listening to current profile:", error);
+                showStatus("Error loading profile data.", true);
+            });
+        }
+
+        // Toggle PFP input
+        pfpUploadBtn.addEventListener('click', () => {
+            const isVisible = pfpUrlInput.classList.contains('hidden');
+            if (isVisible) {
+                pfpUrlInput.classList.remove('hidden');
+                pfpSaveBtn.classList.remove('hidden');
+                pfpUrlInput.focus();
+            } else {
+                pfpUrlInput.classList.add('hidden');
+                pfpSaveBtn.classList.add('hidden');
+            }
+        });
+        
+        // Save new PFP URL
+        pfpSaveBtn.addEventListener('click', async () => {
+            const newUrl = pfpUrlInput.value.trim();
+            if (newUrl && currentUserId) {
+                pfpSaveBtn.disabled = true;
+                pfpSaveBtn.textContent = 'Saving...';
+                
+                try {
+                    const userProfileRef = doc(db, `artifacts/${APP_ID}/users/${currentUserId}/profile/data`);
+                    await setDoc(userProfileRef, { pfpUrl: newUrl }, { merge: true });
+                    
+                    showStatus('Profile picture updated!');
+                    pfpUrlInput.classList.add('hidden');
+                    pfpSaveBtn.classList.add('hidden');
+                    pfpUrlInput.value = ''; // Clear input
+                } catch (error) {
+                    console.error("Error saving PFP URL:", error);
+                    showStatus('Failed to save profile picture.', true);
+                } finally {
+                    pfpSaveBtn.disabled = false;
+                    pfpSaveBtn.textContent = 'Save PFP';
+                }
+            } else if (!newUrl) {
+                showStatus('Please enter a valid URL.', true);
+            }
+        });
+
+        // --- Users List Management ---
+        
+        // Listen for all user profiles to display in the user list
+        function listenForAllUsers() {
+            // For now, we'll query all documents in a dedicated 'public_profiles' collection for simplicity.
+            const profilesCollectionRef = collection(db, `artifacts/${APP_ID}/public/data/public_profiles`);
+            const q = query(profilesCollectionRef);
+
+            onSnapshot(q, (snapshot) => {
+                if (!isAuthReady) return;
+
+                usersListEl.innerHTML = '';
+                let hasUsers = false;
+                
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const userId = docSnap.id; 
+                    
+                    // Do not display the current user in the 'Users' list
+                    if (userId === currentUserId) return; 
+
+                    hasUsers = true;
+                    const username = data.username || 'User';
+                    const pfpUrl = data.pfpUrl || DEFAULT_PFP_URL;
+
+                    const userItem = document.createElement('a');
+                    userItem.href = `#chat/${userId}`; // Placeholder link for DM
+                    userItem.className = 'user-item flex items-center p-3 rounded-lg space-x-3 mb-1';
+                    
+                    const pfp = createProfilePicture(pfpUrl, 'w-10 h-10');
+                    
+                    userItem.innerHTML = `
+                        ${pfp.outerHTML}
+                        <div class="flex-1">
+                            <p class="font-medium text-sm">${username}</p>
+                            <p class="text-xs text-gray-400 truncate">ID: ${userId.substring(0, 8)}...</p>
+                        </div>
+                    `;
+                    
+                    usersListEl.appendChild(userItem);
+                });
+                
+                if (!hasUsers) {
+                    usersListEl.innerHTML = '<p class="text-sm text-gray-500 p-2">No other users online yet.</p>';
+                }
+
+            }, (error) => {
+                console.error("Error listening to all users:", error);
+                usersListEl.innerHTML = '<p class="text-sm text-red-500 p-2">Error loading users.</p>';
+            });
+        }
+        
+        // --- Logout Functionality ---
+        logoutBtn.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // The onAuthStateChanged listener will handle the redirect to login.html
+                showStatus('You have been logged out.');
+            } catch (error) {
+                console.error("Error during logout:", error);
+                showStatus('Logout failed.', true);
+            }
+        });
+
+
+        // --- Profile Creation Fix for Existing Accounts (Only run once after auth is ready) ---
+
+        // After sign-in, ensure the public profile copy is created if it doesn't exist.
+        // This is necessary because Firebase security rules prevent cross-user querying of private data.
+        onAuthStateChanged(auth, async (user) => {
+            if (user && isAuthReady) {
+                const userId = user.uid;
+                const privateProfileRef = doc(db, `artifacts/${APP_ID}/users/${userId}/profile/data`);
+                const publicProfileRef = doc(db, `artifacts/${APP_ID}/public/data/public_profiles/${userId}`);
+                
+                try {
+                    const privateSnap = await getDoc(privateProfileRef);
+                    if (privateSnap.exists()) {
+                        const data = privateSnap.data();
+                        
+                        // Copy essential public fields (username, pfpUrl) to the public collection
+                        await setDoc(publicProfileRef, {
+                            username: data.username || 'User',
+                            pfpUrl: data.pfpUrl || DEFAULT_PFP_URL,
+                            lastActive: new Date().toISOString()
+                        }, { merge: true });
+                    }
+                } catch (error) {
+                    console.error("Error ensuring public profile copy:", error);
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>
